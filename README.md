@@ -355,3 +355,64 @@ FROM Clients;
     - [X] создать таблицу “orders”, заполнить ее значениями. Показать “полный” статус заказа, используя COALESCE.
 
 ------------------------------
+
+## Сортировка. ORDER BY
+### Оператор ORDER BY сортируют значения по одному или нескольких столбцам. 
+Например, упорядочим выборку из таблицы Products по столбцу Price:
+
+```sql
+SELECT * FROM Products
+ORDER BY Price;
+```
+
+Также можно производить упорядочивание данных по псевдониму столбца, который определяется с помощью оператора **AS**:
+
+```sql
+SELECT ProductName, ProductCount * Price AS TotalSum
+FROM Products
+ORDER BY TotalSum;
+```
+
+В качестве критерия сортировки также можно использовать сложное выражение на основе столбцов:
+
+```sql
+SELECT ProductName, Price, ProductCount
+FROM Products
+ORDER BY ProductCount * Price;
+```
+
+### Сортировка по убыванию
+По умолчанию данные сортируются по возрастанию, однако с помощью оператора **DESC** можно задать сортировку по убыванию.
+
+```sql
+SELECT ProductName, ProductCount
+FROM Products
+ORDER BY ProductCount DESC;
+```
+
+По умолчанию вместо DESC используется оператор **ASC**, который сортирует по возрастанию:
+
+```sql
+SELECT ProductName, ProductCount
+FROM Products
+ORDER BY ProductCount ASC;
+```
+
+### Сотировка по нескольким столбцам
+При сортировке сразу по нескольким столбцам все эти столбцы указываются через запятую после оператора **ORDER BY**:
+
+```sql
+SELECT ProductName, Price, Manufacturer
+FROM Products
+ORDER BY Manufacturer, ProductName;
+```
+
+Здесь строки сначала сортируются по столбцу Manufacturer по возрастанию. Затем если есть две строки, в которых столбец Manufacturer имеет одинаковое значение, то они сортируются по столбцу ProductName также по возрастанию. Но опять же с помощью **ASC** и **DESC** можно отдельно для разных столбцов определить сортировку по возрастанию и убыванию:
+
+```sql
+SELECT ProductName, Price, Manufacturer
+FROM Products
+ORDER BY Manufacturer ASC, ProductName DESC;
+```
+
+---------------------------------------------
