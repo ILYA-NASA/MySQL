@@ -356,6 +356,52 @@ FROM Clients;
 
 ------------------------------
 
+# Запросы
+## Выборка уникальных значений. Оператор DISTINCT
+### С помощью оператора DISTINCT можно выбрать уникальные данные по определенным столбцам.
+
+К примеру, разные товары могут иметь одних и тех же производителей, и, допустим, у нас следующая таблица товаров:
+
+```sql
+CREATE TABLE Products
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ProductName VARCHAR(30) NOT NULL,
+    Manufacturer VARCHAR(20) NOT NULL,
+    ProductCount INT DEFAULT 0,
+    Price DECIMAL NOT NULL
+);
+INSERT INTO Products  (ProductName, Manufacturer, ProductCount, Price)
+VALUES
+('iPhone X', 'Apple', 3, 71000),
+('iPhone 8', 'Apple', 3, 56000),
+('Galaxy S9', 'Samsung', 6, 56000),
+('Galaxy S8', 'Samsung', 2, 46000),
+('Honor 10', 'Huawei', 3, 26000);
+```
+
+Выберем всех производителей:
+
+```sql
+SELECT Manufacturer FROM Products;
+```
+_Однако при таком запросе производители повторяются._
+
+Теперь применим оператор **DISTINCT** для выборки уникальных значений:
+
+```sql	
+SELECT DISTINCT Manufacturer FROM Products;
+```
+
+Также мы можем задавать выборку уникальные значения по нескольким столбцам:
+
+```sql	
+SELECT DISTINCT Manufacturer, ProductCount FROM Products;
+```
+_В данном случае для выборки используются столбцы Manufacturer и ProductCount. Из пяти строк только для двух строк эти столбцы имеют повторяющиеся значения. Поэтому в выборке будет 4 строки._
+
+-------------------------------------
+
 ## Сортировка. ORDER BY
 ### Оператор ORDER BY сортируют значения по одному или нескольких столбцам. 
 Например, упорядочим выборку из таблицы Products по столбцу Price:
@@ -451,3 +497,4 @@ LIMIT 2, 3;
 ```
 
 -----------------------------------------------------
+
