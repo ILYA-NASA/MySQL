@@ -1,9 +1,7 @@
--- Ознакомиться с ТАБЛИЦЕЙ
-
 -- Создайте таблицу.
 create table Employees
 (
-	  Id_employee INT auto_increment primary key,
+    Id_employee INT auto_increment primary key,
     Name_employee varchar(15) NOT NULL,
     Surname_employee varchar(15) NOT NULL,
     Specialty_employee varchar(15),
