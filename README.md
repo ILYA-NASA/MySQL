@@ -737,3 +737,84 @@ FROM Products
 
 ----------------------------------------------------------
 
+## Группировка
+### Операторы GROUP BY и HAVING позволяют сгруппировать данные. Они употребляются в рамках команды SELECT:
+```sql
+SELECT столбцы
+FROM таблица
+[WHERE условие_фильтрации_строк]
+[GROUP BY столбцы_для_группировки]
+[HAVING условие_фильтрации_групп]
+[ORDER BY столбцы_для_сортировки]
+```
+
+### GROUP BY
+Оператор **GROUP BY** определяет, как строки будут группироваться.
+
+Например, сгруппируем товары по производителю
+```sql
+SELECT Manufacturer, COUNT(*) AS ModelsCount
+FROM Products
+GROUP BY Manufacturer
+```
+_Первый столбец в выражении SELECT - Manufacturer представляет название группы, а второй столбец - ModelsCount представляет результат функции Count, которая вычисляет количество строк в группе._
+
+И если в выражении **SELECT** производится выборка по одному или нескольким столбцам и также используются агрегатные функции, то необходимо использовать выражение **GROUP BY**. Так, следующий пример работать не будет, так как он не содержит выражение группировки:
+```sql
+SELECT Manufacturer, COUNT(*) AS ModelsCount
+FROM Products
+```
+
+Оператор **GROUP BY** может выполнять группировку по множеству столбцов. Так, добавим группировку по количеству товаров:
+```sql
+SELECT Manufacturer, ProductCount, COUNT(*) AS ModelsCount
+FROM Products
+GROUP BY Manufacturer, ProductCount
+```
+
+Следует учитывать, что выражение **GROUP BY** должно идти после выражения **WHERE**, но до выражения **ORDER BY**:
+```sql
+SELECT Manufacturer, COUNT(*) AS ModelsCount
+FROM Products
+WHERE Price > 30000
+GROUP BY Manufacturer
+ORDER BY ModelsCount DESC
+```
+
+### Фильтрация групп. HAVING
+Оператор **HAVING** позволяет выполнить фильтрацию групп, то есть определяет, какие группы будут включены в выходной результат.
+
+Использование **HAVING** во многом аналогично применению **WHERE**. Только если WHERE применяется для фильтрации строк, то HAVING - для фильтрации групп.
+
+Например, найдем все группы товаров по производителям, для которых определено более 1 модели:
+```sql
+SELECT Manufacturer, COUNT(*) AS ModelsCount
+FROM Products
+GROUP BY Manufacturer
+HAVING COUNT(*) > 1
+```
+
+В одной команде также можно сочетать выражения WHERE и HAVING:
+```sql
+SELECT Manufacturer, COUNT(*) AS ModelsCount
+FROM Products
+WHERE Price * ProductCount > 80000
+GROUP BY Manufacturer
+HAVING COUNT(*) > 1;
+```
+_То есть в данном случае сначала фильтруются строки: выбираются те товары, общая стоимость которых больше 80000. Затем выбранные товары группируются по производителям. И далее фильтруются сами группы - выбираются те группы, которые содержат больше 1 модели._
+
+Если при этом необходимо провести сортировку, то выражение **ORDER BY** идет после выражения **HAVING**:
+```sql
+SELECT Manufacturer, COUNT(*) AS Models, SUM(ProductCount) AS Units
+FROM Products
+WHERE Price * ProductCount > 80000
+GROUP BY Manufacturer
+HAVING SUM(ProductCount) > 2
+ORDER BY Units DESC;
+```
+_Здесь группировка идет по производителям, и также выбирается количество моделей для каждого производителя (Models) и общее количество всех товаров по всем этим моделям (Units). В конце группы сортируются по количеству товаров по убыванию._
+
+----------------------------------------------------------
+
+
