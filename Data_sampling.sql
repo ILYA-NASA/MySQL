@@ -28,8 +28,11 @@ VALUES
 ;
 
 -- Отсортируйте поле “зарплата” (salary) в порядке убывания и возрастания
-SELECT * FROM Employees ORDER BY Salary_employee DESC;
-SELECT * FROM Employees ORDER BY Salary_employee;
+SELECT * FROM Employees 
+ORDER BY Salary_employee DESC;
+
+SELECT * FROM Employees 
+ORDER BY Salary_employee;
 
 -- Выведите 5 максимальных зарплат (salary)
 SELECT Surname_employee, Salary_employee  
@@ -41,13 +44,13 @@ FROM Employees
 GROUP BY Specialty_employee;
 
 -- Найти количество сотрудников по специальности “Рабочий” (post) в возрасте от 24 до 42 лет.
-SELECT Specialty_employee, COUNT(*)  AS "Число сотрудников"
+SELECT Specialty_employee, COUNT(*)  AS "Number of employees"
 FROM Employees 
-WHERE Specialty_employee = 'Рабочий' AND Age_employee >= 24 AND Age_employee <= 42
+WHERE Specialty_employee = 'Рабочий' && Age_employee >= 24 && Age_employee <= 42
 GROUP BY Specialty_employee;
 
 -- Найти количество специальностей
-SELECT  COUNT(distinct Specialty_employee)  AS "Quantity of specialties"
+SELECT  COUNT(distinct Specialty_employee) AS "Quantity of specialties"
 FROM Employees;
 
 -- Вывести специальности, у которых средний возраст сотрудника меньше 44 лет
