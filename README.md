@@ -1314,3 +1314,92 @@ ORDER BY Customers.FirstName;
 В данном случае выбираем все заказы на товары, производителем которых является Apple.
 
 При использовании оператора JOIN следует учитывать, что процесс соединения таблиц может быть ресурсоемким, поэтому следует соединять только те таблицы, данные из которых действительно необходимы. Чем больше таблиц соединяется, тем больше снижается производительность.
+
+## Outer Join
+
+Выше мы обсудили Inner Join или внутреннее соединение таблиц. Но также в MySQL мы можем использовать и так называемое внешнее соединение или Outer Join. В отличие от Inner Join внешнее соединение возвращает все строки одной или двух таблиц, которые участвуют в соединении.
+
+Outer Join имеет следующий формальный синтаксис:
+```sql
+SELECT столбцы
+FROM таблица1
+    {LEFT|RIGHT} [OUTER] JOIN таблица2 ON условие1
+    [{LEFT|RIGHT} [OUTER] JOIN таблица3 ON условие2]...
+```
+
+Перед оператором **JOIN** указывается одно из ключевых слов **LEFT** или **RIGHT**, которые определяют тип соединения:
+
+* LEFT: выборка будет содержать все строки из первой или левой таблицы
+* RIGHT: выборка будет содержать все строки из второй или правой таблицы
+
+Также перед оператором JOIN может указываться ключевое слово OUTER, но его применение необязательно. Далее после JOIN указывается присоединяемая таблица, а затем идет условие соединения.
+
+Например, соединим таблицы Orders и Customers:
+```sql
+SELECT FirstName, CreatedAt, ProductCount, Price, ProductId 
+FROM Orders LEFT JOIN Customers 
+ON Orders.CustomerId = Customers.Id
+```
+
+Таблица Orders является первой или левой таблицей, а таблица Customers - правой таблицей. Поэтому, так как здесь используется выборка по левой таблице, то вначале будут выбираться все строки из Orders, а затем к ним по условию Orders.CustomerId = Customers.Id будут добавляться связанные строки из Customers.
+
+По вышеприведенному результату может показаться, что левостороннее соединение аналогично INNER Join, но это не так. Inner Join объединяет строки из дух таблиц при соответствии условию. Если одна из таблиц содержит строки, которые не соответствуют этому условию, то данные строки не включаются в выходную выборку. Left Join выбирает все строки первой таблицы и затем присоединяет к ним строки правой таблицы. К примеру, возьмем таблицу Customers и добавим к покупателям информацию об их заказах:
+```sql
+#INNER JOIN
+SELECT FirstName, CreatedAt, ProductCount, Price 
+FROM Customers JOIN Orders 
+ON Orders.CustomerId = Customers.Id;
+ 
+#LEFT JOIN
+SELECT FirstName, CreatedAt, ProductCount, Price 
+FROM Customers LEFT JOIN Orders 
+ON Orders.CustomerId = Customers.Id;
+```
+
+В случае с LEFT JOIN MySQL выбирает сначала всех покупателей из таблицы Customers, затем сопоставляет их с заказами из таблицы Orders через условие Orders.CustomerId = Customers.Id. Однако не у всех покупателей есть заказы. В этом случае покупателю для соответствующих столбцов устанавливаются значения NULL.
+```sql
+SELECT FirstName, CreatedAt, ProductCount, Price 
+FROM Customers RIGHT JOIN Orders 
+ON Orders.CustomerId = Customers.Id;
+```
+
+Теперь будут выбираться все строки из Orders (из правой таблицы), а к ним уже будет присоединяться связанные по условию строки из таблицы Customers.
+
+Используем левостороннее соединение для добавления к заказам информации о пользователях и товарах:
+```sql
+SELECT Customers.FirstName, Orders.CreatedAt, 
+       Products.ProductName, Products.Manufacturer
+FROM Orders 
+LEFT JOIN Customers ON Orders.CustomerId = Customers.Id
+LEFT JOIN Products ON Orders.ProductId = Products.Id;
+```
+
+И также можно применять более комплексные условия с фильтрацией и сортировкой. Например, выберем все заказы с информацией о клиентах и товарах по тем товарам, у которых цена больше 45000, и отсортируем по дате заказа:
+```sql
+SELECT Customers.FirstName, Orders.CreatedAt, 
+       Products.ProductName, Products.Manufacturer
+FROM Orders 
+LEFT JOIN Customers ON Orders.CustomerId = Customers.Id
+LEFT JOIN Products ON Orders.ProductId = Products.Id
+WHERE Products.Price > 45000
+ORDER BY Orders.CreatedAt;
+```
+
+Или выберем всех пользователей из Customers, у которых нет заказов в таблице Orders:
+```sql
+SELECT FirstName FROM Customers
+LEFT JOIN Orders ON Customers.Id = Orders.CustomerId
+WHERE Orders.CustomerId IS NULL;
+```
+
+Также можно комбинировать Inner Join и Outer Join:
+```sql
+SELECT Customers.FirstName, Orders.CreatedAt, 
+       Products.ProductName, Products.Manufacturer
+FROM Orders 
+JOIN Products ON Orders.ProductId = Products.Id AND Products.Price > 45000
+LEFT JOIN Customers ON Orders.CustomerId = Customers.Id
+ORDER BY Orders.CreatedAt;
+```
+
+Вначале по условию к таблице Orders через Inner Join присоединяется связанная информация из Products, затем через Outer Join добавляется информация из таблицы Customers.
