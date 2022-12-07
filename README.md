@@ -1140,3 +1140,116 @@ WHERE Id NOT IN (SELECT ProductId FROM Orders)
 ```
 
 Но поскольку при применении EXISTS не происходит выборка строк, то его использование более оптимально и эффективно, чем использование оператора IN.
+
+# Соединение таблиц
+## Неявное соединение таблиц
+
+Нередко возникает необходимость в одном запросе получить данные сразу из нескольких таблиц. Для сведения данных из разных таблиц мы можем использовать разные способы. Рассмотрим не самый распространный, однако довольно простой способ, который представляет неявное соединение таблиц.
+
+Допустим, у нас есть следующие таблицы, которые связаны между собой связями:
+```sql
+CREATE TABLE Products
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ProductName VARCHAR(30) NOT NULL,
+    Manufacturer VARCHAR(20) NOT NULL,
+    ProductCount INT DEFAULT 0,
+    Price DECIMAL NOT NULL
+);
+CREATE TABLE Customers
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(30) NOT NULL
+);
+CREATE TABLE Orders
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ProductId INT NOT NULL,
+    CustomerId INT NOT NULL,
+    CreatedAt DATE NOT NULL,
+    ProductCount INT DEFAULT 1,
+    Price DECIMAL NOT NULL,
+    FOREIGN KEY (ProductId) REFERENCES Products(Id) ON DELETE CASCADE,
+    FOREIGN KEY (CustomerId) REFERENCES Customers(Id) ON DELETE CASCADE
+);
+```
+
+Здесь таблицы Products и Customers связаны с таблицей Orders связью один ко многим. Таблица Orders в виде внешних ключей ProductId и CustomerId содержит ссылки на столбцы Id из соответственно таблиц Products и Customers. Также она хранит количество купленного товара (ProductCount) и и по какой цене он был куплен (Price). И кроме того, таблицы также хранит в виде столбца CreatedAt дату покупки.
+
+Пусть эти таблицы будут содержать следующие данные:
+```sql
+INSERT INTO Products (ProductName, Manufacturer, ProductCount, Price)
+VALUES ('iPhone X', 'Apple', 2, 76000),
+('iPhone 8', 'Apple', 2, 51000),
+('iPhone 7', 'Apple', 5, 42000),
+('Galaxy S9', 'Samsung', 2, 56000),
+('Galaxy S8', 'Samsung', 1, 46000),
+('Honor 10', 'Huawei', 2, 26000),
+('Nokia 8', 'HMD Global', 6, 38000);
+ 
+INSERT INTO Customers(FirstName) VALUES ('Tom'), ('Bob'),('Sam');
+ 
+INSERT INTO Orders (ProductId, CustomerId, CreatedAt, ProductCount, Price)
+VALUES
+( 
+    (SELECT Id FROM Products WHERE ProductName='Galaxy S8'),
+    (SELECT Id FROM Customers WHERE FirstName='Tom'),
+    '2018-05-21', 
+    2, 
+    (SELECT Price FROM Products WHERE ProductName='Galaxy S8')
+),
+( 
+    (SELECT Id FROM Products WHERE ProductName='iPhone X'),
+    (SELECT Id FROM Customers WHERE FirstName='Tom'),
+    '2018-05-23',  
+    1, 
+    (SELECT Price FROM Products WHERE ProductName='iPhone X')
+),
+( 
+    (SELECT Id FROM Products WHERE ProductName='iPhone X'),
+    (SELECT Id FROM Customers WHERE FirstName='Bob'),
+    '2018-05-21',  
+    1, 
+    (SELECT Price FROM Products WHERE ProductName='iPhone X')
+);
+```
+
+Теперь соединим две таблицы Orders и Customers:
+```sql
+SELECT * FROM Orders, Customers;
+```
+
+При такой выборке каждая строка из таблицы Orders будет соединяться с каждой строкой из таблицы Customers. То есть, получится перекрестное соединение. Например, в Orders три строки, а в Customers то же три строки, значит мы получим 3 * 3 = 9 строк. 
+Такое способ соединения применялся при решении  [ПРАКТИЧЕСКОГО ЗАДАНИЯ №2](https://github.com/ILYA-NASA/Hello_SQL/blob/main/Using_CASE.sql). 
+
+Едва ли это тот результат, который хотелось бы видеть. Тем более каждый заказ из Orders связан с конкретным покупателем из Customers, а не со всеми возможными покупателями.
+
+Чтобы решить задачу более корректно, необходимо использовать выражение **WHERE** и фильтровать строки при условии, что поле CustomerId из Orders соответствует полю Id из Customers:
+```sql
+SELECT * FROM Orders, Customers
+WHERE Orders.CustomerId = Customers.Id;
+```
+
+Теперь объединим данные по трем таблицам Orders, Customers и Proucts. То есть получим все заказы и добавим информацию по клиенту и связанному товару:
+```sql
+SELECT Customers.FirstName, Products.ProductName, Orders.CreatedAt 
+FROM Orders, Customers, Products
+WHERE Orders.CustomerId = Customers.Id AND Orders.ProductId=Products.Id;
+```
+
+Так как здесь нужно соединить три таблицы, то применяются как минимум два условия. Ключевой таблицей остается Orders, из которой извлекаются все заказы, а затем к ней подсоединяется данные по клиенту по условию Orders.CustomerId = Customers.Id и данные по товару по условию Orders.ProductId=Products.Id
+
+В данном случае названия таблиц сильно увеличивают код, но мы его можем сократить за счет использования псевдонимов таблиц:
+```sql
+SELECT C.FirstName, P.ProductName, O.CreatedAt 
+FROM Orders AS O, Customers AS C, Products AS P
+WHERE O.CustomerId = C.Id AND O.ProductId=P.Id;
+```
+
+Если необходимо при использовании псевдонима выбрать все столбцы из определенной таблицы, то можно использовать звездочку:
+```sql
+SELECT C.FirstName, P.ProductName, O.*
+FROM Orders AS O, Customers AS C, Products AS P
+WHERE O.CustomerId = C.Id AND O.ProductId=P.Id;
+```
+
