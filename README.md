@@ -1220,7 +1220,7 @@ SELECT * FROM Orders, Customers;
 ```
 
 При такой выборке каждая строка из таблицы Orders будет соединяться с каждой строкой из таблицы Customers. То есть, получится перекрестное соединение. Например, в Orders три строки, а в Customers то же три строки, значит мы получим 3 * 3 = 9 строк. 
-Такое способ соединения применялся при решении  [ПРАКТИЧЕСКОГО ЗАДАНИЯ №2](https://github.com/ILYA-NASA/Hello_SQL/blob/main/Using_CASE.sql). 
+Такой способ соединения применялся при решении  [ПРАКТИЧЕСКОГО ЗАДАНИЯ №2](https://github.com/ILYA-NASA/Hello_SQL/blob/main/Using_CASE.sql). 
 
 Едва ли это тот результат, который хотелось бы видеть. Тем более каждый заказ из Orders связан с конкретным покупателем из Customers, а не со всеми возможными покупателями.
 
@@ -1253,3 +1253,64 @@ FROM Orders AS O, Customers AS C, Products AS P
 WHERE O.CustomerId = C.Id AND O.ProductId=P.Id;
 ```
 
+## Inner Join
+
+Более распространенный подход соединения данных из разных таблиц представляет применение оператора JOIN. Общий формальный синтаксис применения оператора INNER JOIN:
+```sql
+SELECT столбцы
+FROM таблица1
+    [INNER] JOIN таблица2
+    ON условие1
+    [[INNER] JOIN таблица3
+    ON условие2]
+```
+
+После оператора JOIN идет название второй таблицы, из которой надо добавить данные в выборку. Перед **JOIN** может использоваться необязательное ключевое слово **INNER**. Его наличие или отсутствие ни на что не влияет. Затем после ключевого слова **ON** указывается условие соединения. Это условие устанавливает, как две таблицы будут сравниваться. В большинстве случаев для соединения применяется первичный ключ главной таблицы и внешний ключ зависимой таблицы.
+
+Возьмем таблицы с данными из прошлой темы и, используя JOIN, выберем все заказы и добавим к ним информацию о товарах:
+```sql
+SELECT Orders.CreatedAt, Orders.ProductCount, Products.ProductName 
+FROM Orders
+JOIN Products ON Products.Id = Orders.ProductId;
+```
+
+Поскольку таблицы могут содержать столбцы с одинаковыми названиями, то при указании столбцов для выборки указывается их полное имя вместе с именем таблицы, например, "Orders.ProductCount".
+
+Используя псевдонимы для таблиц, можно сократить код:
+```sql
+SELECT O.CreatedAt, O.ProductCount, P.ProductName 
+FROM Orders AS O
+JOIN Products AS P
+ON P.Id = O.ProductId;
+```
+
+Также можно присоединять данные сразу из нескольких таблиц. Например, добавим к заказу информацию о покупателе из таблицы Customers:
+```sql
+SELECT Orders.CreatedAt, Customers.FirstName, Products.ProductName 
+FROM Orders
+JOIN Products ON Products.Id = Orders.ProductId
+JOIN Customers ON Customers.Id=Orders.CustomerId;
+```
+
+Благодаря соединению таблиц мы можем использовать их столбцы для фильтрации выборки или ее сортировки:
+```sql
+SELECT Orders.CreatedAt, Customers.FirstName, Products.ProductName 
+FROM Orders
+JOIN Products ON Products.Id = Orders.ProductId
+JOIN Customers ON Customers.Id=Orders.CustomerId
+WHERE Products.Price > 45000
+ORDER BY Customers.FirstName;
+```
+
+Условия после ключевого слова ON могут быть более сложными по составу:
+```sql
+SELECT Orders.CreatedAt, Customers.FirstName, Products.ProductName 
+FROM Orders
+JOIN Products ON Products.Id = Orders.ProductId AND Products.Manufacturer='Apple'
+JOIN Customers ON Customers.Id=Orders.CustomerId
+ORDER BY Customers.FirstName;
+```
+
+В данном случае выбираем все заказы на товары, производителем которых является Apple.
+
+При использовании оператора JOIN следует учитывать, что процесс соединения таблиц может быть ресурсоемким, поэтому следует соединять только те таблицы, данные из которых действительно необходимы. Чем больше таблиц соединяется, тем больше снижается производительность.
