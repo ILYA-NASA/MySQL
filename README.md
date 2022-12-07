@@ -1403,3 +1403,92 @@ ORDER BY Orders.CreatedAt;
 ```
 
 Вначале по условию к таблице Orders через Inner Join присоединяется связанная информация из Products, затем через Outer Join добавляется информация из таблицы Customers.
+
+## UNION
+
+Оператор **UNION** позволяет обединить две однотипных выборки. Эти выборки могут быть из разных таблиц или из одной и той же таблицы. Формальный синтаксис объединения:
+```sql
+SELECT_выражение1
+UNION [ALL] SELECT_выражение2
+[UNION [ALL] SELECT_выражениеN]
+```
+
+Например, пусть в базе данных будут две отдельные таблицы для клиентов банка (таблица Customers) и для сотрудников банка (таблица Employees):
+```sql
+CREATE TABLE Customers
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(20) NOT NULL,
+    LastName VARCHAR(20) NOT NULL,
+    AccountSum DECIMAL
+);
+CREATE TABLE Employees
+(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(20) NOT NULL,
+    LastName VARCHAR(20) NOT NULL
+);
+  
+INSERT INTO Customers(FirstName, LastName, AccountSum) 
+VALUES
+('Tom', 'Smith', 2000),
+('Sam', 'Brown', 3000),
+('Mark', 'Adams', 2500),
+('Paul', 'Ins', 4200),
+('John', 'Smith', 2800),
+('Tim', 'Cook', 2800);
+  
+INSERT INTO Employees(FirstName, LastName)
+VALUES
+('Homer', 'Simpson'),
+('Tom', 'Smith'),
+('Mark', 'Adams'),
+('Nick', 'Svensson');
+```
+
+Здесь мы можем заметить, что обе таблицы, несмотря на наличие различных данных, могут характеризоваться двумя общими атрибутами - именем (FirstName) и фамилией (LastName). Выберем сразу всех клиентов банка и его сотрудников из обеих таблиц:
+```sql
+SELECT FirstName, LastName 
+FROM Customers
+UNION SELECT FirstName, LastName FROM Employees;
+```
+
+Здесь из первой таблицы выбираются два значения - имя и фамилия клиента. Из второй таблицы Employees также выбираются два значения - имя и фамилия сотрудников. То есть при объединении количество выбираемых столбцов и их тип совпадают для обеих выборок.
+
+При этом названия столбцов объединенной выборки будут совпадать с названия столбцов первой выборки. И если мы захотим при этом еще произвести сортировку, то в выражениях **ORDER BY** необходимо ориентироваться именно на названия столбцов первой выборки:
+```sql
+SELECT FirstName AS FName, LastName
+FROM Customers
+UNION SELECT FirstName, LastName
+FROM Employees
+ORDER BY FName DESC;
+```
+
+В данном случае каждая выборка имеет по столбцу FName из первой выборки. Тем не менее при сортировке будет учитываться и значение столбца FirstName из второй выборки.
+
+Если же в одной выборке больше столбцов, чем в другой, то они не смогут быть объединены. Например, в следующем случае объединение завершится с ошибкой:
+```sql
+SELECT FirstName, LastName, AccountSum
+FROM Customers
+UNION SELECT FirstName, LastName 
+FROM Employees;
+```
+
+Если оба объединяемых набора содержат в строках идентичные значения, то при объединении повторяющиеся строки удаляются. Например, в случае с таблицами Customers и Employees сотрудники банка могут быть одновременно его клиентами и содержаться в обеих таблицах. При объединении в примерах выше всех дублирующиеся строки удалялись. Если же необходимо при объединении сохранить все, в том числе повторяющиеся строки, то для этого необходимо использовать оператор **ALL**:
+```sql
+SELECT FirstName, LastName
+FROM Customers
+UNION ALL SELECT FirstName, LastName 
+FROM Employees
+ORDER BY FirstName;
+```
+
+Объединять выборки можно и из одной и той же таблицы. Например, в зависимости от суммы на счете клиента нам надо начислять ему определенные проценты:
+```sql
+SELECT FirstName, LastName, AccountSum + AccountSum * 0.1 AS TotalSum 
+FROM Customers WHERE AccountSum < 3000
+UNION SELECT FirstName, LastName, AccountSum + AccountSum * 0.3 AS TotalSum 
+FROM Customers WHERE AccountSum >= 3000;
+```
+
+В данном случае если сумма меньше 3000, то начисляются проценты в размере 10% от суммы на счете. Если на счете больше 3000, то проценты увеличиваются до 30%.
